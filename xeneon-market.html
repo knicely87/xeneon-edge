@@ -3,172 +3,43 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>XENEON Market Strip</title>
+  <title>XENEON Market Ticker</title>
   <style>
-    :root{
-      --bg:#0b1220; --panel:#0f172a; --border:rgba(255,255,255,.08);
-      --text:rgba(255,255,255,.92); --muted:rgba(255,255,255,.65);
-      --radius:14px;
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #0b1220;
+      overflow: hidden;
     }
-    html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;}
-    .wrap{height:100%;display:grid;grid-template-rows:64px 1fr 190px;gap:10px;padding:10px;box-sizing:border-box;}
-    .card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;}
-    .controls{display:flex;gap:8px;flex-wrap:wrap;padding:10px;border-bottom:1px solid var(--border);}
-    .btn{
-      padding:10px 12px;border-radius:12px;border:1px solid var(--border);
-      background:rgba(255,255,255,.04);color:var(--text);font-weight:600;
-      touch-action:manipulation; user-select:none;
-    }
-    .btn:active{transform:translateY(1px);}
-    .btn.active{outline:2px solid rgba(41,98,255,.7);}
-    .spotlight{height:100%;display:grid;grid-template-rows:auto 1fr;}
-    .bottom{display:grid;grid-template-columns:repeat(7,1fr);gap:10px;padding:10px;}
-    .mini{border-radius:14px;overflow:hidden;border:1px solid var(--border);background:rgba(0,0,0,.12);}
-    .label{padding:8px 10px;font-weight:700;font-size:13px;border-bottom:1px solid var(--border);color:var(--muted);}
-    .mini .tv{height:135px;}
-    .tvwrap{height:100%;width:100%;}
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="card"><div id="tickerTape" class="tvwrap"></div></div>
 
-    <div class="card spotlight">
-      <div class="controls" id="controls"></div>
-      <div id="spotlightWidget" class="tvwrap"></div>
-    </div>
+<div class="tradingview-widget-container">
+  <div class="tradingview-widget-container__widget"></div>
 
-    <div class="card" style="padding:0;">
-      <div class="bottom" id="minis"></div>
-    </div>
-  </div>
-
-<script>
-  const INDICES = [
-    { s:"FOREXCOM:SPXUSD", name:"S&P 500" },
-    { s:"FOREXCOM:NSXUSD", name:"Nasdaq 100" },
-    { s:"FOREXCOM:DJI",    name:"Dow" }
-  ];
-  const MAG7 = [
-    { s:"NASDAQ:AAPL",  name:"AAPL" },
-    { s:"NASDAQ:MSFT",  name:"MSFT" },
-    { s:"NASDAQ:GOOGL", name:"GOOGL" },
-    { s:"NASDAQ:AMZN",  name:"AMZN" },
-    { s:"NASDAQ:NVDA",  name:"NVDA" },
-    { s:"NASDAQ:META",  name:"META" },
-    { s:"NASDAQ:TSLA",  name:"TSLA" }
-  ];
-
-  function mountTVWidget(targetEl, scriptSrc, configObj) {
-    targetEl.innerHTML = `
-      <div class="tradingview-widget-container" style="height:100%;width:100%;">
-        <div class="tradingview-widget-container__widget" style="height:100%;width:100%;"></div>
-      </div>
-    `;
-    const script = document.createElement("script");
-    script.src = scriptSrc;
-    script.async = true;
-    script.type = "text/javascript";
-    script.text = JSON.stringify(configObj);
-    targetEl.appendChild(script);
+  <script src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>
+  {
+    "symbols": [
+      {"proName":"FOREXCOM:SPXUSD","title":"S&P 500"},
+      {"proName":"FOREXCOM:NSXUSD","title":"Nasdaq 100"},
+      {"proName":"FOREXCOM:DJI","title":"Dow"},
+      {"proName":"NASDAQ:AAPL","title":"Apple"},
+      {"proName":"NASDAQ:MSFT","title":"Microsoft"},
+      {"proName":"NASDAQ:GOOGL","title":"Alphabet"},
+      {"proName":"NASDAQ:AMZN","title":"Amazon"},
+      {"proName":"NASDAQ:NVDA","title":"NVIDIA"},
+      {"proName":"NASDAQ:META","title":"Meta"},
+      {"proName":"NASDAQ:TSLA","title":"Tesla"}
+    ],
+    "showSymbolLogo": true,
+    "colorTheme": "dark",
+    "displayMode": "adaptive",
+    "isTransparent": false,
+    "locale": "en"
   }
+  </script>
+</div>
 
-  function renderTickerTape(){
-    mountTVWidget(
-      document.getElementById("tickerTape"),
-      "https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js",
-      {
-        symbols: [...INDICES, ...MAG7].map(x => ({ proName: x.s, title: x.name })),
-        showSymbolLogo: true,
-        isTransparent: true,
-        displayMode: "adaptive",
-        colorTheme: "dark",
-        locale: "en"
-      }
-    );
-  }
-
-  function renderSpotlight(symbol){
-    mountTVWidget(
-      document.getElementById("spotlightWidget"),
-      "https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js",
-      {
-        symbols: [[symbol, symbol]],
-        chartOnly: false,
-        width: "100%",
-        height: "100%",
-        locale: "en",
-        colorTheme: "dark",
-        autosize: true,
-        showVolume: true,
-        showMA: true,
-        hideDateRanges: false,
-        hideMarketStatus: false,
-        hideSymbolLogo: false,
-        scalePosition: "right",
-        scaleMode: "Normal",
-        valuesTracking: "1",
-        changeMode: "price-and-percent"
-      }
-    );
-  }
-
-  function renderControls(defaultSymbol){
-    const el = document.getElementById("controls");
-    const all = [...INDICES, ...MAG7];
-
-    el.innerHTML = all.map(x =>
-      `<button class="btn ${x.s===defaultSymbol ? "active":""}" data-s="${x.s}">${x.name}</button>`
-    ).join("");
-
-    el.addEventListener("click", (e) => {
-      const btn = e.target.closest("button[data-s]");
-      if(!btn) return;
-      [...el.querySelectorAll(".btn")].forEach(b => b.classList.remove("active"));
-      btn.classList.add("active");
-      renderSpotlight(btn.dataset.s);
-    });
-  }
-
-  function renderMinisStaggered(){
-    const el = document.getElementById("minis");
-    el.innerHTML = MAG7.map((x,i)=>`
-      <div class="mini">
-        <div class="label">${x.name}</div>
-        <div class="tv" id="mini-${i}"></div>
-      </div>
-    `).join("");
-
-    // Stagger to avoid “too many widgets at once” failures
-    MAG7.forEach((x,i)=>{
-      setTimeout(()=>{
-        mountTVWidget(
-          document.getElementById(`mini-${i}`),
-          "https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js",
-          {
-            symbol: x.s,
-            width: "100%",
-            height: "135",
-            locale: "en",
-            dateRange: "1M",
-            colorTheme: "dark",
-            isTransparent: true,
-            autosize: true
-          }
-        );
-      }, 250 * i);
-    });
-  }
-
-  // Boot sequence (stable for embedded views)
-  window.addEventListener("load", () => {
-    const defaultSymbol = "NASDAQ:NVDA";
-    renderTickerTape();
-    renderControls(defaultSymbol);
-
-    setTimeout(() => renderSpotlight(defaultSymbol), 300);
-    setTimeout(() => renderMinisStaggered(), 600);
-  });
-</script>
 </body>
 </html>
