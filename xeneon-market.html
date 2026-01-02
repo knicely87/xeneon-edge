@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>XENEON Market Strip</title>
+  <style>
+    :root{
+      --bg:#0b1220;
+      --panel:#0f172a;
+      --border:rgba(255,255,255,.08);
+      --text:rgba(255,255,255,.92);
+      --muted:rgba(255,255,255,.65);
+      --radius:14px;
+    }
+    html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;}
+    .wrap{height:100%;display:grid;grid-template-rows:64px 1fr 190px;gap:10px;padding:10px;box-sizing:border-box;}
+    .card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;}
+    .top{display:grid;grid-template-columns:1fr;align-items:stretch;}
+    .controls{display:flex;gap:8px;flex-wrap:wrap;padding:10px;border-bottom:1px solid var(--border);}
+    .btn{
+      padding:10px 12px;border-radius:12px;border:1px solid var(--border);
+      background:rgba(255,255,255,.04);color:var(--text);font-weight:600;
+      touch-action:manipulation; user-select:none;
+    }
+    .btn:active{transform:translateY(1px);}
+    .btn small{color:var(--muted);font-weight:600;margin-left:6px;}
+    .spotlight{height:100%;display:grid;grid-template-rows:auto 1fr;}
+    #spotlightWidget{height:100%;}
+    .bottom{display:grid;grid-template-columns:repeat(7,1fr);gap:10px;padding:10px;}
+    .mini{border-radius:14px;overflow:hidden;border:1px solid var(--border);background:rgba(0,0,0,.12);}
+    .label{padding:8px 10px;font-weight:700;font-size:13px;border-bottom:1px solid var(--border);color:var(--muted);}
+    .mini .tv{height:135px;}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+
+    <!-- Ticker tape across the whole strip -->
+    <div class="card top">
+      <div id="tickerTape"></div>
+    </div>
+
+    <!-- Spotlight (tap to switch) -->
+    <div class="card spotlight">
+      <div class="controls" id="controls"></div>
+      <div id="spotlightWidget"></div>
+    </div>
+
+    <!-- Mag 7 mini-cards -->
+    <div class="card" style="padding:0;">
+      <div class="bottom" id="minis"></div>
+    </div>
+
+  </div>
+
+<script>
+  // Symbols
+  const INDICES = [
+    { s:"FOREXCOM:SPXUSD", name:"S&P 500" },
+    { s:"FOREXCOM:NSXUSD", name:"Nasdaq 100" },
+    { s:"FOREXCOM:DJI",    name:"Dow" }
+  ];
+  const MAG7 = [
+    { s:"NASDAQ:AAPL",  name:"AAPL" },
+    { s:"NASDAQ:MSFT",  name:"MSFT" },
+    { s:"NASDAQ:GOOGL", name:"GOOGL" },
+    { s:"NASDAQ:AMZN",  name:"AMZN" },
+    { s:"NASDAQ:NVDA",  name:"NVDA" },
+    { s:"NASDAQ:META",  name:"META" },
+    { s:"NASDAQ:TSLA",  name:"TSLA" }
+  ];
+
+  // ---------- TradingView: Ticker Tape ----------
+  (function renderTickerTape(){
+    const el = document.getElementById("tickerTape");
+    el.innerHTML = `
+      <div class="tradingview-widget-container" style="height:100%;width:100%;">
+        <div class="tradingview-widget-container__widget"></div>
+        <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>
+        ${JSON.stringify({
+          symbols: [...INDICES, ...MAG7].map(x => ({ proName: x.s, title: x.name })),
+          showSymbolLogo: true,
+          isTransparent: true,
+          displayMode: "adaptive",
+          colorTheme: "dark",
+          locale: "en"
+        })}
+        <\/script>
+      </div>`;
+  })();
+
+  // ---------- TradingView: Spotlight (big chart) ----------
+  function renderSpotlight(symbol){
+    const el = document.getElementById("spotlightWidget");
+    el.innerHTML = `
+      <div class="tradingview-widget-container" style="height:100%;width:100%;">
+        <div class="tradingview-widget-container__widget" style="height:100%;width:100%;"></div>
+        <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js" async>
+        ${JSON.stringify({
+          symbols: [[symbol, symbol]],
+          chartOnly: false,
+          width: "100%",
+          height: "100%",
+          locale: "en",
+          colorTheme: "dark",
+          autosize: true,
+          showVolume: true,
+          showMA: true,
+          hideDateRanges: false,
+          hideMarketStatus: false,
+          hideSymbolLogo: false,
+          scalePosition: "right",
+          scaleMode: "Normal",
+          fontFamily: "system-ui",
+          noTimeScale: false,
+          valuesTracking: "1",
+          changeMode: "price-and-percent"
+        })}
+        <\/script>
+      </div>`;
+  }
+
+  // ---------- Controls (tap buttons) ----------
+  (function renderControls(){
+    const el = document.getElementById("controls");
+    const all = [...INDICES, ...MAG7];
+    el.innerHTML = all.map(x =>
+      `<button class="btn" data-s="${x.s}">${x.name}</button>`
+    ).join("");
+    el.addEventListener("click", (e) => {
+      const btn = e.target.closest("button[data-s]");
+      if(!btn) return;
+      renderSpotlight(btn.dataset.s);
+    });
+  })();
+
+  // ---------- TradingView: Mini-cards for Mag7 ----------
+  (function renderMinis(){
+    const el = document.getElementById("minis");
+    el.innerHTML = MAG7.map(x => `
+      <div class="mini">
+        <div class="label">${x.name}</div>
+        <div class="tv">
+          <div class="tradingview-widget-container" style="height:135px;width:100%;">
+            <div class="tradingview-widget-container__widget" style="height:135px;width:100%;"></div>
+            <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async>
+            ${JSON.stringify({
+              symbol: x.s,
+              width: "100%",
+              height: "135",
+              locale: "en",
+              dateRange: "1M",
+              colorTheme: "dark",
+              isTransparent: true,
+              autosize: true,
+              largeChartUrl: ""
+            })}
+            <\/script>
+          </div>
+        </div>
+      </div>
+    `).join("");
+  })();
+
+  // Default spotlight
+  renderSpotlight("NASDAQ:NVDA");
+</script>
+</body>
+</html>
